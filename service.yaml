@@ -31,6 +31,9 @@ Parameters:
     Type: String
   CloudWatchLogGroupName:
     Type: String
+  ALBTargetGroupName:
+    Type: String
+    Description: 'ALB Target Group Name from Infrastructure stack'
 
 Resources:
   # --- ECS TASK DEFINITION ---
@@ -113,7 +116,7 @@ Resources:
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - TargetGroups:
-              - Name: !GetAtt ALBTargetGroup.TargetGroupName
+              - Name: !Ref ALBTargetGroupName
               - Name: !GetAtt GreenTargetGroup.TargetGroupName
             ProdTrafficRoute:
               ListenerArn: !ImportValue 'java-full-stack-ALBListenerArn'

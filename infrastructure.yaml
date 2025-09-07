@@ -545,3 +545,9 @@ Outputs:
     Value: !Ref ALBTargetGroup
     Export:
       Name: !Sub ${AppName}-ALBTargetGroupName
+
+  ALBListenerArn:
+    Description: ALB Listener ARN
+    Value: !Ref ALBListener
+    Export:
+      Name: !Sub ${AppName}-ALBListenerArn
