@@ -1,2 +1,6 @@
 template-file-path: infrastructure.yaml
-
+parameters:
+  GitHubRepoName: ecs-cicd-lab-app
+  AppName: java-full-stack
+  GitHubRepoOwner: ibra15-cyber
+tags: {}
