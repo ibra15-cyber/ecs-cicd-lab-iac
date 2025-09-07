@@ -150,3 +150,6 @@ Outputs:
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
     Value: !GetAtt GreenTargetGroup.TargetGroupName
+  DeploymentTimestamp:
+    Description: 'Timestamp of last deployment'
+    Value: !Sub 'Deployed at ${AWS::Timestamp}'
