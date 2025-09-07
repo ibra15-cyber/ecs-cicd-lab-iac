@@ -5,6 +5,10 @@ Parameters:
   AppName:
     Type: String
     Default: 'java-full-stack'
+  DeploymentTimestamp:
+    Type: String
+    Default: "default"
+    Description: 'Timestamp to force changeset creation'
 
 Resources:
   # ECS TASK DEFINITION let me see if it will trigger
@@ -152,4 +156,4 @@ Outputs:
     Value: !GetAtt GreenTargetGroup.TargetGroupName
   DeploymentTimestamp:
     Description: 'Timestamp of last deployment'
-    Value: !Sub 'Deployed at ${AWS::Timestamp}'
+    Value: !Ref DeploymentTimestamp
