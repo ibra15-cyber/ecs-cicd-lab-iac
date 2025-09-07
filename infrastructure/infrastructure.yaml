@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Fargate CI/CD Lab - Core Infrastructure - trigger'
+Description: 'ECS Fargate CI/CD Lab - Core Infrastructure - TRIGGER'
 
 Parameters:
   AppName:
