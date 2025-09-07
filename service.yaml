@@ -59,6 +59,7 @@ Resources:
           Essential: true
           PortMappings:
             - ContainerPort: 8080
+              Protocol: tcp
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -66,13 +67,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: ecs
 
-  # --- CODE DEPLOY RESOURCES FOR BLUE-GREEN ---
-  CodeDeployApp:
-    Type: AWS::CodeDeploy::Application
-    Properties:
-      ApplicationName: !Sub ${AppName}-CodeDeploy-App
-      ComputePlatform: ECS
-
+  # --- GREEN TARGET GROUP FOR BLUE-GREEN DEPLOYMENT ---
   GreenTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -83,9 +78,14 @@ Resources:
       VpcId: !Ref VPCId
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
       Matcher:
         HttpCode: '200'
 
+  # --- TEST LISTENER FOR BLUE-GREEN DEPLOYMENT ---
   TestListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -96,8 +96,41 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref GreenTargetGroup
 
+  # --- ECS SERVICE (with Load Balancer configuration) ---
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub ${AppName}-Service
+      Cluster: !Ref ECSClusterName
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      DeploymentController:
+        Type: CODE_DEPLOY
+      LoadBalancers:
+        - TargetGroupArn: !Ref ALBTargetGroupArn
+          ContainerName: !Sub ${AppName}-Container
+          ContainerPort: 8080
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - !Ref PrivateSubnet1Id
+            - !Ref PrivateSubnet2Id
+          SecurityGroups:
+            - !Ref ECSSecurityGroupId
+
+  # --- CODE DEPLOY APPLICATION ---
+  CodeDeployApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub ${AppName}-CodeDeploy-App
+      ComputePlatform: ECS
+
+  # --- CODE DEPLOY DEPLOYMENT GROUP ---
   CodeDeployDeploymentGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn: ECSService
     Properties:
       ApplicationName: !Ref CodeDeployApp
       DeploymentGroupName: !Sub ${AppName}-CodeDeploy-DG
@@ -111,45 +144,22 @@ Resources:
           Action: TERMINATE
           TerminationWaitTimeInMinutes: 5
         DeploymentReadyOption:
-          WaitTimeInMinutes: 5
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+        TargetGroupInfoList:
+          - Name: !Ref ALBTargetGroupName
+          - Name: !GetAtt GreenTargetGroup.TargetGroupName
       AutoRollbackConfiguration:
         Enabled: true
         Events:
           - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_ALARM
       ECSServices:
         - ServiceName: !GetAtt ECSService.Name
           ClusterName: !Ref ECSClusterName
       LoadBalancerInfo:
-        TargetGroupPairInfoList:
-          - TargetGroups:
-              - Name: !Ref ALBTargetGroupName
-              - Name: !GetAtt GreenTargetGroup.TargetGroupName
-            ProdTrafficRoute:
-              ListenerArns: 
-              - !ImportValue 'java-full-stack-ALBListenerArn'
-            TestTrafficRoute:
-              ListenerArns: 
-                - !Ref TestListener
-
-  # --- ECS SERVICE (Managed by CodeDeploy) ---
-  ECSService:
-    Type: AWS::ECS::Service
-    Properties:
-      ServiceName: !Sub ${AppName}-Service
-      Cluster: !Ref ECSClusterName
-      TaskDefinition: !Ref ECSTaskDefinition
-      DesiredCount: 1
-      LaunchType: FARGATE
-      DeploymentController:
-        Type: CODE_DEPLOY
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
-          Subnets:
-            - !Ref PrivateSubnet1Id
-            - !Ref PrivateSubnet2Id
-          SecurityGroups:
-            - !Ref ECSSecurityGroupId
+        TargetGroupInfoList:
+          - Name: !Ref ALBTargetGroupName
+          - Name: !GetAtt GreenTargetGroup.TargetGroupName
 
 Outputs:
   ServiceURL:
@@ -161,3 +171,9 @@ Outputs:
   CodeDeployAppName:
     Description: 'CodeDeploy Application Name'
     Value: !Ref CodeDeployApp
+  TestListenerArn:
+    Description: 'Test Listener ARN for Blue-Green Deployment'
+    Value: !Ref TestListener
+  GreenTargetGroupName:
+    Description: 'Green Target Group Name'
+    Value: !GetAtt GreenTargetGroup.TargetGroupName
