@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - trigger'
+Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - TRIGGERED!'
 
 Parameters:
   AppName:
@@ -7,6 +7,25 @@ Parameters:
     Default: 'java-full-stack'
 
 Resources:
+
+  # --- GREEN TARGET GROUP FOR BLUE-GREEN DEPLOYMENT ---
+  GreenTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${AppName}-Green-TG
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !ImportValue 'java-full-stack-VPCId'
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+        
   # ECS TASK DEFINITION let me see if it will trigger
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -34,23 +53,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: ecs
 
-  # --- GREEN TARGET GROUP FOR BLUE-GREEN DEPLOYMENT ---
-  GreenTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: !Sub ${AppName}-Green-TG
-      Port: 80
-      Protocol: HTTP
-      TargetType: ip
-      VpcId: !ImportValue 'java-full-stack-VPCId'
-      HealthCheckPath: /
-      HealthCheckProtocol: HTTP
-      HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 3
-      Matcher:
-        HttpCode: '200'
+
 
   # --- TEST LISTENER FOR BLUE-GREEN DEPLOYMENT ---
   TestListener:
