@@ -116,7 +116,7 @@ Resources:
         Enabled: true
         Events:
           - DEPLOYMENT_FAILURE
-      EcsServices:
+      ECSServices:
         - ServiceName: !GetAtt ECSService.Name
           ClusterName: !Ref ECSClusterName
       LoadBalancerInfo:
@@ -125,9 +125,11 @@ Resources:
               - Name: !Ref ALBTargetGroupName
               - Name: !GetAtt GreenTargetGroup.TargetGroupName
             ProdTrafficRoute:
-              ListenerArn: !ImportValue 'java-full-stack-ALBListenerArn'
+              ListenerArns: 
+              - !ImportValue 'java-full-stack-ALBListenerArn'
             TestTrafficRoute:
-              ListenerArn: !Ref TestListener
+              ListenerArns: 
+                - !Ref TestListener
 
   # --- ECS SERVICE (Managed by CodeDeploy) ---
   ECSService:
