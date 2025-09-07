@@ -1,0 +1,16 @@
+# service-params.yaml
+Parameters:
+  AppName: 'java-full-stack'
+  VPCId: 'vpc-0025c715d3c070e07'
+  ECSClusterName: 'java-full-stack-Cluster'
+  ALBArn: 'arn:aws:elasticloadbalancing:eu-west-1:241533136420:loadbalancer/app/java-full-stack-ALB/c4358b202f5c943d'
+  ALBDNSName: 'java-full-stack-ALB-587031232.eu-west-1.elb.amazonaws.com'
+  ALBSecurityGroupId: 'sg-0c1a245d37822ccd7'
+  ECSSecurityGroupId: 'sg-0f3652f3b16c6306c'
+  PrivateSubnet1Id: 'subnet-021dd942030724bcc'
+  PrivateSubnet2Id: 'subnet-0767e005abffba154'
+  ECRRepositoryURI: '241533136420.dkr.ecr.eu-west-1.amazonaws.com/java-full-stack'
+  ECSTaskExecutionRoleArn: 'arn:aws:iam::241533136420:role/ibra-cfn-infrastructure-ECSTaskExecutionRole-PM9Zxt003AcC'
+  ECSTaskRoleArn: 'arn:aws:iam::241533136420:role/ibra-cfn-infrastructure-ECSTaskRole-2BsLO6GBxr30'
+  ALBTargetGroupArn: 'arn:aws:elasticloadbalancing:eu-west-1:241533136420:targetgroup/java-full-stack-TG/9820ddc6f121ca6b'
+  CloudWatchLogGroupName: '/ecs/java-full-stack'
