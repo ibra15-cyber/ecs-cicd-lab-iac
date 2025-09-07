@@ -369,7 +369,7 @@ Resources:
       ImageScanningConfiguration:
         ScanOnPush: true
 
-  # --- ECS CLUSTER ---
+  # ECS CLUSTER ---
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
