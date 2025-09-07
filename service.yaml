@@ -7,8 +7,7 @@ Parameters:
     Default: 'java-full-stack'
 
 Resources:
-  # ECS TASK DEFINITION
-  
+  # ECS TASK DEFINITION let me see if it will trigger
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
