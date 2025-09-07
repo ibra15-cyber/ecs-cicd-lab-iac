@@ -1,4 +1,4 @@
-template-file-path: service.yaml
+template-file-path: service/service.yaml
 parameters:
   AppName: java-full-stack
 tags: {}
