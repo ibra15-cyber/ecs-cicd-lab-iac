@@ -7,7 +7,7 @@ Parameters:
     Default: 'java-full-stack'
 
 Resources:
-  # --- ECS TASK DEFINITION ---
+  # ECS TASK DEFINITION ---
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
