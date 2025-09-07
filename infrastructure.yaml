@@ -539,3 +539,9 @@ Outputs:
     Value: !GetAtt GitHubOIDCRole.Arn
     Export:
       Name: !Sub ${AppName}-GitHubOIDCRoleArn
+  # In your infrastructure.yaml outputs section
+  ALBTargetGroupName:
+    Description: ALB Target Group Name
+    Value: !Ref ALBTargetGroup
+    Export:
+      Name: !Sub ${AppName}-ALBTargetGroupName
