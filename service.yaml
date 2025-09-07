@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Fargate CI/CD Lab - Service Deployment'
+Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment'
 
 Parameters:
   AppName:
@@ -11,7 +11,7 @@ Parameters:
     Type: String
   ALBArn:
     Type: String
-  ALBDNSName:  # Added missing parameter
+  ALBDNSName:
     Type: String
   ALBSecurityGroupId:
     Type: String
@@ -21,15 +21,15 @@ Parameters:
     Type: String
   PrivateSubnet2Id:
     Type: String
-  ECRRepositoryURI:  # Added missing parameter
+  ECRRepositoryURI:
     Type: String
-  ECSTaskExecutionRoleArn:  # Added missing parameter
+  ECSTaskExecutionRoleArn:
     Type: String
-  ECSTaskRoleArn:  # Added missing parameter
+  ECSTaskRoleArn:
     Type: String
-  ALBTargetGroupArn:  # Added missing parameter
+  ALBTargetGroupArn:
     Type: String
-  CloudWatchLogGroupName:  # Added missing parameter
+  CloudWatchLogGroupName:
     Type: String
 
 Resources:
@@ -42,22 +42,85 @@ Resources:
       RequiresCompatibilities: [FARGATE]
       Cpu: 256
       Memory: 512
-      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn  # Fixed: Use Ref instead of ImportValue
-      TaskRoleArn: !Ref ECSTaskRoleArn  # Fixed: Use Ref instead of ImportValue
+      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn
+      TaskRoleArn: !Ref ECSTaskRoleArn
       ContainerDefinitions:
         - Name: !Sub ${AppName}-Container
-          Image: !Sub ${ECRRepositoryURI}:latest  # Fixed: Use the parameter
+          Image: !Sub ${ECRRepositoryURI}:latest
           Essential: true
           PortMappings:
             - ContainerPort: 8080
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Ref CloudWatchLogGroupName  # Fixed: Use Ref instead of ImportValue
+              awslogs-group: !Ref CloudWatchLogGroupName
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: ecs
 
-  # --- ECS SERVICE ---
+  # --- CODE DEPLOY RESOURCES FOR BLUE-GREEN ---
+  CodeDeployApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub ${AppName}-CodeDeploy-App
+      ComputePlatform: ECS
+
+  GreenTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${AppName}-Green-TG
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VPCId
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      Matcher:
+        HttpCode: '200'
+
+  TestListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALBArn
+      Port: 9000
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref GreenTargetGroup
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApp
+      DeploymentGroupName: !Sub ${AppName}-CodeDeploy-DG
+      ServiceRoleArn: !ImportValue 'java-full-stack-CodeDeployServiceRoleArn'
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      BlueGreenDeploymentConfiguration:
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 5
+        DeploymentReadyOption:
+          WaitTimeInMinutes: 5
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+      EcsServices:
+        - ServiceName: !GetAtt ECSService.Name
+          ClusterName: !Ref ECSClusterName
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - TargetGroups:
+              - Name: !GetAtt ALBTargetGroup.TargetGroupName
+              - Name: !GetAtt GreenTargetGroup.TargetGroupName
+            ProdTrafficRoute:
+              ListenerArn: !ImportValue 'java-full-stack-ALBListenerArn'
+            TestTrafficRoute:
+              ListenerArn: !Ref TestListener
+
+  # --- ECS SERVICE (Managed by CodeDeploy) ---
   ECSService:
     Type: AWS::ECS::Service
     Properties:
@@ -66,6 +129,8 @@ Resources:
       TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: 1
       LaunchType: FARGATE
+      DeploymentController:
+        Type: CODE_DEPLOY
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -74,39 +139,14 @@ Resources:
             - !Ref PrivateSubnet2Id
           SecurityGroups:
             - !Ref ECSSecurityGroupId
-      LoadBalancers:
-        - ContainerName: !Sub ${AppName}-Container
-          ContainerPort: 8080
-          TargetGroupArn: !Ref ALBTargetGroupArn  # Fixed: Use Ref instead of ImportValue
-
-  # --- AUTOSCALING ---
-  ECSServiceAutoScaling:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    DependsOn: ECSService
-    Properties:
-      MaxCapacity: 4
-      MinCapacity: 1
-      ResourceId: !Sub service/${ECSClusterName}/${AppName}-Service
-      ScalableDimension: ecs:service:DesiredCount
-      ServiceNamespace: ecs
-
-  ECSScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: !Sub ${AppName}-CPU-Scaling
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref ECSServiceAutoScaling
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 50.0
-        PredefinedMetricSpecification:
-          PredefinedMetricType: ECSServiceAverageCPUUtilization
-        ScaleOutCooldown: 60
-        ScaleInCooldown: 60
 
 Outputs:
   ServiceURL:
     Description: 'URL to access the application'
-    Value: !Sub http://${ALBDNSName}  # Now this will work
+    Value: !Sub http://${ALBDNSName}
   ECSServiceName:
     Description: 'ECS Service Name'
     Value: !Ref ECSService
+  CodeDeployAppName:
+    Description: 'CodeDeploy Application Name'
+    Value: !Ref CodeDeployApp
