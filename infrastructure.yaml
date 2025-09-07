@@ -551,3 +551,9 @@ Outputs:
     Value: !Ref ALBListener
     Export:
       Name: !Sub ${AppName}-ALBListenerArn
+
+  CodeDeployServiceRoleArn:
+    Description: CodeDeploy Service Role ARN
+    Value: !GetAtt CodeDeployServiceRole.Arn
+    Export:
+      Name: !Sub ${AppName}-CodeDeployServiceRoleArn
