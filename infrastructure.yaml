@@ -108,6 +108,22 @@ Resources:
             Action: ['sts:AssumeRole']
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
+      Policies:
+      - PolicyName: TaggingPermissions
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'ec2:CreateTags'
+                - 'ec2:DeleteTags'
+                - 'elasticloadbalancing:AddTags'
+                - 'elasticloadbalancing:RemoveTags'
+                - 'ecs:TagResource'
+                - 'ecs:UntagResource'
+                - 'tag:TagResources'
+                - 'tag:UntagResources'
+              Resource: '*'
       Path: /
 
   GitHubOIDCProvider:

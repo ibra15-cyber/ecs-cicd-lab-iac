@@ -145,9 +145,6 @@ Resources:
           TerminationWaitTimeInMinutes: 5
         DeploymentReadyOption:
           ActionOnTimeout: CONTINUE_DEPLOYMENT
-        TargetGroupInfoList:
-          - Name: !Ref ALBTargetGroupName
-          - Name: !GetAtt GreenTargetGroup.TargetGroupName
       AutoRollbackConfiguration:
         Enabled: true
         Events:
