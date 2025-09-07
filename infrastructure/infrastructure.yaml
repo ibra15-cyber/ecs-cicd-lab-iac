@@ -577,11 +577,19 @@ Outputs:
     Export:
       Name: !Sub ${AppName}-ALBListenerArn
 
+  # Add this to the Outputs section of infrastructure.yaml
+  CodePipelineServiceRoleArn:
+    Description: 'CodePipeline Service Role ARN'
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: !Sub ${AppName}-CodePipelineServiceRoleArn
+
   CodeDeployServiceRoleArn:
     Description: CodeDeploy Service Role ARN
     Value: !GetAtt CodeDeployServiceRole.Arn
     Export:
       Name: !Sub ${AppName}-CodeDeployServiceRoleArn
+
   # Add this to the Outputs section of infrastructure.yaml
   ArtifactBucketName:
     Description: 'S3 Artifact Bucket Name'
