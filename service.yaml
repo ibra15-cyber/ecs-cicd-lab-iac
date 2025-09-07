@@ -5,41 +5,6 @@ Parameters:
   AppName:
     Type: String
     Default: 'java-full-stack'
-  VPCId:
-    Type: String
-  ECSClusterName:
-    Type: String
-  ALBArn:
-    Type: String
-  ALBDNSName:
-    Type: String
-  ALBSecurityGroupId:
-    Type: String
-  ECSSecurityGroupId:
-    Type: String
-  PrivateSubnet1Id:
-    Type: String
-  PrivateSubnet2Id:
-    Type: String
-  ECRRepositoryURI:
-    Type: String
-  ECSTaskExecutionRoleArn:
-    Type: String
-  ECSTaskRoleArn:
-    Type: String
-  ALBTargetGroupArn:
-    Type: String
-  CloudWatchLogGroupName:
-    Type: String
-  ALBTargetGroupName:
-    Type: String
-    Description: 'ALB Target Group Name from Infrastructure stack'
-  ALBListenerArn:
-    Type: String
-    Description: 'ALB listener Name from Infrastructure stack'
-  CodeDeployServiceRoleArnParam:
-    Type: String
-    Description: 'CodeDeploy Service Role ARN'
 
 Resources:
   # --- ECS TASK DEFINITION ---
@@ -51,11 +16,13 @@ Resources:
       RequiresCompatibilities: [FARGATE]
       Cpu: 256
       Memory: 512
-      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn
-      TaskRoleArn: !Ref ECSTaskRoleArn
+      ExecutionRoleArn: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn'
+      TaskRoleArn: !ImportValue 'java-full-stack-ECSTaskRoleArn'
       ContainerDefinitions:
         - Name: !Sub ${AppName}-Container
-          Image: !Sub ${ECRRepositoryURI}:latest
+          Image: !Sub 
+            - "${ECRRepoURI}:latest"
+            - ECRRepoURI: !ImportValue 'java-full-stack-ECRRepositoryURI'
           Essential: true
           PortMappings:
             - ContainerPort: 8080
@@ -63,7 +30,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Ref CloudWatchLogGroupName
+              awslogs-group: !ImportValue 'java-full-stack-CloudWatchLogGroupName'
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: ecs
 
@@ -75,7 +42,7 @@ Resources:
       Port: 80
       Protocol: HTTP
       TargetType: ip
-      VpcId: !Ref VPCId
+      VpcId: !ImportValue 'java-full-stack-VPCId'
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckIntervalSeconds: 30
@@ -89,7 +56,7 @@ Resources:
   TestListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref ALBArn
+      LoadBalancerArn: !ImportValue 'java-full-stack-ALBArn'
       Port: 9000
       Protocol: HTTP
       DefaultActions:
@@ -101,24 +68,24 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       ServiceName: !Sub ${AppName}-Service
-      Cluster: !Ref ECSClusterName
+      Cluster: !ImportValue 'java-full-stack-ECSClusterName'
       TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: 1
       LaunchType: FARGATE
       DeploymentController:
         Type: CODE_DEPLOY
       LoadBalancers:
-        - TargetGroupArn: !Ref ALBTargetGroupArn
+        - TargetGroupArn: !ImportValue 'java-full-stack-ALBTargetGroupArn'
           ContainerName: !Sub ${AppName}-Container
           ContainerPort: 8080
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
           Subnets:
-            - !Ref PrivateSubnet1Id
-            - !Ref PrivateSubnet2Id
+            - !ImportValue 'java-full-stack-PrivateSubnet1Id'
+            - !ImportValue 'java-full-stack-PrivateSubnet2Id'
           SecurityGroups:
-            - !Ref ECSSecurityGroupId
+            - !ImportValue 'java-full-stack-ECSSecurityGroupId'
 
   # --- CODE DEPLOY APPLICATION ---
   CodeDeployApp:
@@ -152,16 +119,25 @@ Resources:
           - DEPLOYMENT_STOP_ON_ALARM
       ECSServices:
         - ServiceName: !GetAtt ECSService.Name
-          ClusterName: !Ref ECSClusterName
+          ClusterName: !ImportValue 'java-full-stack-ECSClusterName'
       LoadBalancerInfo:
-        TargetGroupInfoList:
-          - Name: !Ref ALBTargetGroupName
-          - Name: !GetAtt GreenTargetGroup.TargetGroupName
+        TargetGroupPairInfoList:
+          - TargetGroups:
+              - Name: !ImportValue 'java-full-stack-ALBTargetGroupName'
+              - Name: !GetAtt GreenTargetGroup.TargetGroupName
+            ProdTrafficRoute:
+              ListenerArns: 
+                - !ImportValue 'java-full-stack-ALBListenerArn'
+            TestTrafficRoute:
+              ListenerArns: 
+                - !Ref TestListener
 
 Outputs:
   ServiceURL:
     Description: 'URL to access the application'
-    Value: !Sub http://${ALBDNSName}
+    Value: !Sub 
+      - "http://${ALBDNSName}"
+      - ALBDNSName: !ImportValue 'java-full-stack-ALBDNSName'
   ECSServiceName:
     Description: 'ECS Service Name'
     Value: !Ref ECSService

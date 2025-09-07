@@ -95,7 +95,7 @@ Resources:
                   - 'iam:PassRole'
                 Resource: '*'
       Path: /
-      
+
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
     Properties:
