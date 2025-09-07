@@ -99,6 +99,18 @@ Resources:
                   - 'ecs:DescribeTaskDefinition'
                   - 'iam:PassRole'
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ecr:DescribeImages'
+                  - 'ecr:DescribeRepositories'
+                  - 'ecr:ListImages'
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:GetDownloadUrlForLayer'
+                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${AppName}'
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                Resource: '*'
       Path: /
 
   CodeDeployServiceRole:
