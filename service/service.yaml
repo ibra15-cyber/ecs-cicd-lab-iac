@@ -5,6 +5,7 @@ Parameters:
   AppName:
     Type: String
     Default: 'java-full-stack'
+    #use this to trigger change
   DeploymentTimestamp:
     Type: String
     Default: "default"
@@ -154,6 +155,7 @@ Outputs:
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
     Value: !GetAtt GreenTargetGroup.TargetGroupName
+    #use this to trigger change
   DeploymentTimestamp:
     Description: 'Timestamp of last deployment'
     Value: !Ref DeploymentTimestamp

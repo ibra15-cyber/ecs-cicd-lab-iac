@@ -14,6 +14,11 @@ Parameters:
     Type: String
     Default: 'ibra15-cyber'
     Description: 'The owner of the GitHub repository'
+      #use this to trigger change
+  DeploymentTimestamp:
+    Type: String
+    Default: "default"
+    Description: 'Timestamp to force changeset creation'
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -577,3 +582,8 @@ Outputs:
     Value: !GetAtt CodeDeployServiceRole.Arn
     Export:
       Name: !Sub ${AppName}-CodeDeployServiceRoleArn
+
+  #triggered
+  DeploymentTimestamp:
+    Description: 'Timestamp of last deployment'
+    Value: !Ref DeploymentTimestamp
