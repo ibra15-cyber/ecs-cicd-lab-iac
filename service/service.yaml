@@ -148,13 +148,22 @@ Outputs:
     Value: !Ref ECSService
   CodeDeployAppName:
     Description: 'CodeDeploy Application Name'
-    Value: !Ref CodeDeployApp
+    Value: !GetAtt CodeDeployApp.ApplicationName # Get the actual 'Name' property
+    Export:
+      Name: !Sub ${AppName}-CodeDeployAppName
   TestListenerArn:
     Description: 'Test Listener ARN for Blue-Green Deployment'
     Value: !Ref TestListener
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
     Value: !GetAtt GreenTargetGroup.TargetGroupName
+
+  CodeDeployDeploymentGroupName:
+    Description: 'CodeDeploy Deployment Group Name'
+    Value: !GetAtt CodeDeployDeploymentGroup.DeploymentGroupName # Get the actual 'Name' property
+    Export:
+      Name: !Sub ${AppName}-CodeDeployDeploymentGroupName
+
     #use this to trigger change
   DeploymentTimestamp:
     Description: 'Timestamp of last deployment'

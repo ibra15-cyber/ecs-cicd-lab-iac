@@ -582,6 +582,12 @@ Outputs:
     Value: !GetAtt CodeDeployServiceRole.Arn
     Export:
       Name: !Sub ${AppName}-CodeDeployServiceRoleArn
+  # Add this to the Outputs section of infrastructure.yaml
+  ArtifactBucketName:
+    Description: 'S3 Artifact Bucket Name'
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: !Sub ${AppName}-ArtifactBucketName
 
   #triggered
   DeploymentTimestamp:

@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CodePipeline for ECS Blue-Green Deployment'
+
+Parameters:
+  AppName:
+    Type: String
+    Default: 'java-full-stack'
+  DeploymentTimestamp:
+    Type: String
+    Default: "default"
+
+Resources:
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub ${AppName}-Pipeline
+      RoleArn: !ImportValue 'java-full-stack-CodePipelineServiceRoleArn'
+      ArtifactStore:
+        Type: S3
+        Location: !ImportValue 'java-full-stack-ArtifactBucketName' # FIXED IMPORT
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: ECR-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: '1'
+                Provider: ECR
+              Configuration:
+                RepositoryName: !Ref AppName
+                ImageTag: latest
+              OutputArtifacts:
+                - Name: ECRImage
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: CodeDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !ImportValue 'java-full-stack-CodeDeployAppName' # Now this will work
+                DeploymentGroupName: !ImportValue 'java-full-stack-CodeDeployDeploymentGroupName' # Now this will work
+              InputArtifacts:
+                - Name: ECRImage
+              RunOrder: 1
+
+Outputs:
+  PipelineName:
+    Description: 'CodePipeline Name'
+    Value: !Ref CodePipeline
+  DeploymentTimestamp:
+    Description: 'Timestamp of last deployment'
+    Value: !Ref DeploymentTimestamp
