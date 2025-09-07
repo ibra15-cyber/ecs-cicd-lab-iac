@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 template-file-path: infrastructure.yaml
+=======
+template-file-path: infrastructure/infrastructure.yaml
+>>>>>>> 9f8041b0d55856bd6161b8a14b9dc51c4d05cbf3
 parameters:
   GitHubRepoName: ecs-cicd-lab-app
   AppName: java-full-stack
