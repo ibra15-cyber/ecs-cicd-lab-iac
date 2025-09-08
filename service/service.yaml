@@ -136,6 +136,30 @@ Resources:
             TestTrafficRoute:
               ListenerArns: 
                 - !Ref TestListener
+  
+  # Add to service.yaml
+  ApplicationAutoScalingScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 4
+      MinCapacity: 1
+      ResourceId: !Sub service/${ECSCluster}/${ECSService}
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ApplicationAutoScalingScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub ${AppName}-cpu-scaling-policy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ApplicationAutoScalingScalableTarget
+      TargetTrackingScalingPolicies:
+        - TargetValue: 70.0
+          ScaleInCooldown: 300
+          ScaleOutCooldown: 300
+          PredefinedMetricSpecification:
+            PredefinedMetricType: ECSServiceAverageCPUUtilization
 
 Outputs:
   ServiceURL:
