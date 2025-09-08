@@ -162,9 +162,13 @@ Outputs:
   TestListenerArn:
     Description: 'Test Listener ARN for Blue-Green Deployment'
     Value: !Ref TestListener
+
+  # REPLACE this output in service.yaml
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
-    Value: !GetAtt GreenTargetGroup.TargetGroupName
+    Value: !GetAtt GreenTargetGroup.TargetGroupName  # Get the actual NAME property
+    Export:
+      Name: !Sub ${AppName}-GreenTargetGroupName
 
     #use this to trigger change
   DeploymentTimestamp:
