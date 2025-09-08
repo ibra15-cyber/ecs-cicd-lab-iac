@@ -31,7 +31,7 @@ Resources:
             Value: !ImportValue 'java-full-stack-ECSTaskRoleArn'
       Source:
         Type: CODEPIPELINE
-        BuildSpec: |
+        BuildSpec:
           version: 0.2
           phases:
             pre_build:
@@ -40,57 +40,55 @@ Resources:
                 - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
                 - echo Getting latest image URI...
                 - IMAGE_URI=$ECR_REPOSITORY_URI:latest
-                - echo "Image URI will be: $IMAGE_URI"
+                - echo "Image URI will be:" $IMAGE_URI
             build:
               commands:
                 - echo Build started on `date`
                 - echo Creating appspec.yml...
-                - |
-                  cat > appspec.yml << 'EOF'
-                  version: 0.0
-                  Resources:
-                    - TargetService:
-                        Type: AWS::ECS::Service
-                        Properties:
-                          TaskDefinition: <TASK_DEFINITION>
-                          LoadBalancerInfo:
-                            ContainerName: "java-full-stack-Container"
-                            ContainerPort: 8080
-                  EOF
+                - 'cat > appspec.yml << "EOF"'
+                - version: 0.0
+                - "Resources:"
+                - "  - TargetService:"
+                - "      Type: AWS::ECS::Service"
+                - "      Properties:"
+                - "        TaskDefinition: <TASK_DEFINITION>"
+                - "        LoadBalancerInfo:"
+                - '          ContainerName: "java-full-stack-Container"'
+                - "          ContainerPort: 8080"
+                - "EOF"
                 - echo Creating taskdef.json...
-                - |
-                  cat > taskdef.json << EOF
-                  {
-                    "family": "java-full-stack-Task",
-                    "networkMode": "awsvpc",
-                    "requiresCompatibilities": ["FARGATE"],
-                    "cpu": "256",
-                    "memory": "512",
-                    "executionRoleArn": "$TASK_EXECUTION_ROLE_ARN",
-                    "taskRoleArn": "$TASK_ROLE_ARN",
-                    "containerDefinitions": [
-                      {
-                        "name": "java-full-stack-Container",
-                        "image": "<IMAGE1_NAME>",
-                        "essential": true,
-                        "portMappings": [
-                          {
-                            "containerPort": 8080,
-                            "protocol": "tcp"
-                          }
-                        ],
-                        "logConfiguration": {
-                          "logDriver": "awslogs",
-                          "options": {
-                            "awslogs-group": "/ecs/java-full-stack",
-                            "awslogs-region": "$AWS_DEFAULT_REGION",
-                            "awslogs-stream-prefix": "ecs"
-                          }
-                        }
-                      }
-                    ]
-                  }
-                  EOF
+                - 'cat > taskdef.json << "EOF"'
+                - "{"
+                - '  "family": "java-full-stack-Task",'
+                - '  "networkMode": "awsvpc",'
+                - '  "requiresCompatibilities": ["FARGATE"],'
+                - '  "cpu": "256",'
+                - '  "memory": "512",'
+                - '  "executionRoleArn": "'$TASK_EXECUTION_ROLE_ARN'",'
+                - '  "taskRoleArn": "'$TASK_ROLE_ARN'",'
+                - '  "containerDefinitions": ['
+                - "    {"
+                - '      "name": "java-full-stack-Container",'
+                - '      "image": "<IMAGE1_NAME>",'
+                - '      "essential": true,'
+                - '      "portMappings": ['
+                - "        {"
+                - '          "containerPort": 8080,'
+                - '          "protocol": "tcp"'
+                - "        }"
+                - "      ],"
+                - '      "logConfiguration": {'
+                - '        "logDriver": "awslogs",'
+                - '        "options": {'
+                - '          "awslogs-group": "/ecs/java-full-stack",'
+                - '          "awslogs-region": "'$AWS_DEFAULT_REGION'",'
+                - '          "awslogs-stream-prefix": "ecs"'
+                - "        }"
+                - "      }"
+                - "    }"
+                - "  ]"
+                - "}"
+                - "EOF"
                 - echo "Validating generated files..."
                 - echo "AppSpec content:"
                 - cat appspec.yml
