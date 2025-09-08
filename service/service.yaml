@@ -1,18 +1,17 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment -  triggered triggered'
+Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - triggered'
 
 Parameters:
   AppName:
     Type: String
     Default: 'java-full-stack'
-    #use this to trigger change
   DeploymentTimestamp:
     Type: String
     Default: "default"
     Description: 'Timestamp to force changeset creation'
 
 Resources:
-  # ECS TASK DEFINITION let me see if it will trigger
+  # ECS TASK DEFINITION
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -73,7 +72,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       ServiceName: !Sub ${AppName}-Service
-      Cluster: !ImportValue 'java-full-stack-ECSClusterName'
+      Cluster: !ImportValue 'java-full-stack-ECSClusterName'  # FIXED: Use ImportValue instead of Ref
       TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: 1
       LaunchType: FARGATE
@@ -91,6 +90,46 @@ Resources:
             - !ImportValue 'java-full-stack-PrivateSubnet2Id'
           SecurityGroups:
             - !ImportValue 'java-full-stack-ECSSecurityGroupId'
+
+  # --- APPLICATION AUTO SCALING (Added to meet requirements) ---
+  ApplicationAutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: application-autoscaling.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSServiceRolePolicy
+
+  ScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 4
+      MinCapacity: 1
+      ResourceId: !Sub 
+        - service/${ClusterName}/${ServiceName}
+        - ClusterName: !ImportValue 'java-full-stack-ECSClusterName'
+          ServiceName: !Sub ${AppName}-Service
+      RoleARN: !GetAtt ApplicationAutoScalingRole.Arn
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub ${AppName}-cpu-scaling-policy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ScalableTarget
+      TargetTrackingScalingPolicies:
+        - TargetValue: 70.0
+          ScaleInCooldown: 300
+          ScaleOutCooldown: 300
+          PredefinedMetricSpecification:
+            PredefinedMetricType: ECSServiceAverageCPUUtilization
 
   # --- CODE DEPLOY APPLICATION ---
   CodeDeployApp:
@@ -128,7 +167,7 @@ Resources:
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - TargetGroups:
-              - Name: !ImportValue 'java-full-stack-ALBTargetGroupName' #blue
+              - Name: !ImportValue 'java-full-stack-ALBTargetGroupName'
               - Name: !GetAtt GreenTargetGroup.TargetGroupName
             ProdTrafficRoute:
               ListenerArns: 
@@ -136,30 +175,6 @@ Resources:
             TestTrafficRoute:
               ListenerArns: 
                 - !Ref TestListener
-  
-  # Add to service.yaml
-  ApplicationAutoScalingScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: 4
-      MinCapacity: 1
-      ResourceId: !Sub service/${ECSCluster}/${ECSService}
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
-      ScalableDimension: ecs:service:DesiredCount
-      ServiceNamespace: ecs
-
-  ApplicationAutoScalingScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: !Sub ${AppName}-cpu-scaling-policy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref ApplicationAutoScalingScalableTarget
-      TargetTrackingScalingPolicies:
-        - TargetValue: 70.0
-          ScaleInCooldown: 300
-          ScaleOutCooldown: 300
-          PredefinedMetricSpecification:
-            PredefinedMetricType: ECSServiceAverageCPUUtilization
 
 Outputs:
   ServiceURL:
@@ -167,19 +182,20 @@ Outputs:
     Value: !Sub 
       - "http://${ALBDNSName}"
       - ALBDNSName: !ImportValue 'java-full-stack-ALBDNSName'
+  
   ECSServiceName:
     Description: 'ECS Service Name'
     Value: !Ref ECSService
 
   CodeDeployAppName:
     Description: 'CodeDeploy Application Name'
-    Value: !Ref CodeDeployApp  # This gets the actual name
+    Value: !Ref CodeDeployApp
     Export:
       Name: !Sub ${AppName}-CodeDeployAppName
 
   CodeDeployDeploymentGroupName:
     Description: 'CodeDeploy Deployment Group Name'
-    Value: !Ref CodeDeployDeploymentGroup  # This gets the actual name
+    Value: !Ref CodeDeployDeploymentGroup
     Export:
       Name: !Sub ${AppName}-CodeDeployDeploymentGroupName
 
@@ -187,14 +203,16 @@ Outputs:
     Description: 'Test Listener ARN for Blue-Green Deployment'
     Value: !Ref TestListener
 
-  # REPLACE this output in service.yaml
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
-    Value: !GetAtt  GreenTargetGroup.TargetGroupName  # Get the actual NAME property
+    Value: !GetAtt GreenTargetGroup.TargetGroupName
     Export:
       Name: !Sub ${AppName}-GreenTargetGroupName
 
-    #use this to trigger change
+  ScalableTargetId:
+    Description: 'Application Auto Scaling Target ID'
+    Value: !Ref ScalableTarget
+
   DeploymentTimestamp:
     Description: 'Timestamp of last deployment'
     Value: !Ref DeploymentTimestamp
