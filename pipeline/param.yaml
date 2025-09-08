@@ -1,0 +1,5 @@
+template-file-path: pipeline/pipeline.yaml
+parameters:
+  DeploymentTimestamp: default
+  AppName: java-full-stack
+tags: {}
