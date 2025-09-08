@@ -1,0 +1,100 @@
+graph TB
+    %% External
+    Users[Internet Users] --> IGW[Internet Gateway]
+    
+    %% GitHub CI/CD
+    GitHub[GitHub Repository<br/>Java App + Dockerfile] --> |Push to master| GHA[GitHub Actions<br/>OIDC Auth]
+    GHA --> |Build & Push| ECR[Amazon ECR<br/>java-full-stack:latest]
+    ECR --> |Image Push Event| EB[EventBridge Rule]
+    EB --> |Triggers| CP[CodePipeline]
+    
+    %% Pipeline Stages
+    CP --> CB[CodeBuild<br/>Create appspec.yml & taskdef.json]
+    CB --> CD[CodeDeploy<br/>Blue-Green ECS Deployment]
+    CD --> |Deploy to| ECS1[ECS Task Blue]
+    CD --> |Test Deploy to| ECS2[ECS Task Green]
+    
+    %% VPC Structure
+    subgraph AWS["AWS Cloud (eu-west-1)"]
+        subgraph VPC["VPC: java-full-stack (10.0.0.0/16)"]
+            IGW --> ALB[Application Load Balancer<br/>Port 80 Production<br/>Port 9000 Test]
+            
+            subgraph AZ1["Availability Zone A (eu-west-1a)"]
+                subgraph PubSub1["Public Subnet 1 (10.0.1.0/24)"]
+                    NAT1[NAT Gateway 1]
+                end
+                subgraph PrivSub1["Private Subnet 1 (10.0.3.0/24)"]
+                    ECS1[ECS Fargate Task<br/>Blue Production<br/>Java App:8080<br/>CPU:256 MEM:512]
+                    BTG[Blue Target Group]
+                end
+            end
+            
+            subgraph AZ2["Availability Zone B (eu-west-1b)"]
+                subgraph PubSub2["Public Subnet 2 (10.0.2.0/24)"]
+                    NAT2[NAT Gateway 2]
+                end
+                subgraph PrivSub2["Private Subnet 2 (10.0.4.0/24)"]
+                    ECS2[ECS Fargate Task<br/>Green Standby<br/>New Version:8080<br/>Blue-Green Deploy]
+                    GTG[Green Target Group]
+                    ECSScale[Auto Scale Tasks 2-4<br/>CPU Target: 70%]
+                end
+            end
+            
+            %% Load Balancer Connections
+            ALB --> |Production Traffic| BTG
+            ALB --> |Test Traffic Port 9000| GTG
+            BTG --> ECS1
+            GTG --> ECS2
+            
+            %% Outbound Internet via NAT
+            ECS1 --> |ECR/CloudWatch| NAT1
+            ECS2 --> |ECR/CloudWatch| NAT2
+            NAT1 --> IGW
+            NAT2 --> IGW
+            
+            %% Logging and Storage
+            ECS1 --> CW[CloudWatch Logs<br/>/ecs/java-full-stack]
+            ECS2 --> CW
+            CP --> S3[S3 Artifact Bucket<br/>CodePipeline Storage]
+        end
+    end
+    
+    %% Security Groups
+    subgraph SG["Security Groups"]
+        ALBSG[ALB Security Group<br/>In: 80,9000 from 0.0.0.0/0<br/>Out: 8080 to ECS SG]
+        ECSSG[ECS Security Group<br/>In: 8080 from ALB SG<br/>Out: All for ECR/CloudWatch]
+    end
+    
+    %% IAM & Auth
+    subgraph IAM["IAM Roles"]
+        OIDC[GitHub OIDC Provider<br/>No Long-lived Secrets]
+        TaskRole[ECS Task Execution Role<br/>ECR & CloudWatch Access]
+        PipelineRole[CodePipeline Service Role<br/>S3, CodeBuild, CodeDeploy]
+    end
+    
+    %% Application Output
+    subgraph App["Application Content"]
+        UI[Static UI Display<br/>Name: IBRAHIM ANYRAS SAFIANU<br/>Lab: ECS CICD!]
+    end
+    
+    ECS1 --> UI
+    ECS2 --> UI
+    
+    %% Styling
+    classDef aws fill:#ff9900,stroke:#ff7700,stroke-width:2px,color:white
+    classDef vpc fill:#e6f3ff,stroke:#0066cc,stroke-width:2px
+    classDef public fill:#dcfce7,stroke:#16a34a,stroke-width:2px
+    classDef private fill:#fef2f2,stroke:#dc2626,stroke-width:2px
+    classDef ecs fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:white
+    classDef cicd fill:#9d4edd,stroke:#8f3bb8,stroke-width:2px,color:white
+    classDef storage fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:white
+    classDef security fill:#6b7280,stroke:#4b5563,stroke-width:2px,color:white
+    
+    class AWS,IGW aws
+    class VPC,ALB vpc
+    class PubSub1,PubSub2,NAT1,NAT2 public
+    class PrivSub1,PrivSub2 private
+    class ECS1,ECS2,BTG,GTG,ECSScale ecs
+    class GitHub,GHA,CP,CB,CD,EB cicd
+    class ECR,CW,S3 storage
+    class SG,ALBSG,ECSSG,IAM,OIDC,TaskRole,PipelineRole security
