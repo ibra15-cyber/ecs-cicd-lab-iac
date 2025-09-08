@@ -124,12 +124,12 @@ Resources:
       PolicyName: !Sub ${AppName}-cpu-scaling-policy
       PolicyType: TargetTrackingScaling
       ScalingTargetId: !Ref ScalableTarget
-      TargetTrackingScalingPolicies:
-        - TargetValue: 70.0
-          ScaleInCooldown: 300
-          ScaleOutCooldown: 300
-          PredefinedMetricSpecification:
-            PredefinedMetricType: ECSServiceAverageCPUUtilization
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 300
+        ScaleOutCooldown: 300
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
 
   # --- CODE DEPLOY APPLICATION ---
   CodeDeployApp:
