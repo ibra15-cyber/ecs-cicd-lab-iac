@@ -1,0 +1,259 @@
+<svg width="1400" height="900" viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="4" height="4">
+      <path d="M 0,4 l 4,-4 M -1,1 l 2,-2 M 3,5 l 2,-2" stroke="#e5e7eb" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="3" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+    <linearGradient id="awsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff9900;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#ff9900;stop-opacity:0.3" />
+    </linearGradient>
+    <linearGradient id="vpcGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e6f3ff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#cce7ff;stop-opacity:0.9" />
+    </linearGradient>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#374151"/>
+    </marker>
+    <marker id="blueArrow" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#3b82f6"/>
+    </marker>
+    <marker id="greenArrow" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#16a34a"/>
+    </marker>
+    <marker id="purpleArrow" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#9d4edd"/>
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="900" fill="#f8fafc"/>
+  
+  <!-- Title -->
+  <text x="700" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1e293b">
+    ECS CI/CD Lab - Complete Architecture (High Availability + Blue-Green Deployment)
+  </text>
+  
+  <!-- AWS Cloud -->
+  <rect x="60" y="70" width="1280" height="750" rx="12" fill="url(#awsGradient)" stroke="#ff9900" stroke-width="4"/>
+  <text x="90" y="105" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ff9900">AWS Cloud - eu-west-1</text>
+  
+  <!-- VPC -->
+  <rect x="100" y="130" width="1050" height="650" rx="8" fill="url(#vpcGradient)" stroke="#0066cc" stroke-width="3"/>
+  <text x="130" y="160" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0066cc">VPC: java-full-stack (10.0.0.0/16)</text>
+  
+  <!-- Internet Gateway -->
+  <rect x="520" y="180" width="180" height="50" rx="6" fill="#ff6b35" stroke="#e55a2b" stroke-width="2" filter="url(#shadow)"/>
+  <text x="610" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Internet Gateway</text>
+  
+  <!-- Internet Users -->
+  <ellipse cx="610" cy="110" rx="100" ry="30" fill="#6366f1" stroke="#4f46e5" stroke-width="3" filter="url(#shadow)"/>
+  <text x="610" y="118" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Internet Users</text>
+  
+  <!-- Connection from Internet to IGW -->
+  <path d="M 610 140 L 610 180" stroke="#374151" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Availability Zone 1 -->
+  <rect x="130" y="260" width="460" height="500" rx="6" fill="#f0f9ff" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="150" y="290" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#0369a1">Availability Zone A (eu-west-1a)</text>
+  
+  <!-- Availability Zone 2 -->
+  <rect x="610" y="260" width="460" height="500" rx="6" fill="#f0f9ff" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="630" y="290" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#0369a1">Availability Zone B (eu-west-1b)</text>
+  
+  <!-- Public Subnet 1 -->
+  <rect x="160" y="310" width="400" height="90" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="180" y="335" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#16a34a">Public Subnet 1 (10.0.1.0/24)</text>
+  
+  <!-- Public Subnet 2 -->
+  <rect x="640" y="310" width="400" height="90" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="660" y="335" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#16a34a">Public Subnet 2 (10.0.2.0/24)</text>
+  
+  <!-- NAT Gateway 1 -->
+  <rect x="200" y="360" width="90" height="30" rx="4" fill="#fbbf24" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)"/>
+  <text x="245" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">NAT GW 1</text>
+  
+  <!-- NAT Gateway 2 -->
+  <rect x="680" y="360" width="90" height="30" rx="4" fill="#fbbf24" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)"/>
+  <text x="725" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">NAT GW 2</text>
+  
+  <!-- Application Load Balancer (spans both AZs) -->
+  <rect x="350" y="330" width="420" height="50" rx="6" fill="#8b5cf6" stroke="#7c3aed" stroke-width="3" filter="url(#shadow)"/>
+  <text x="560" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Application Load Balancer</text>
+  <text x="440" y="345" font-family="Arial, sans-serif" font-size="10" fill="white">Port 80 (Production)</text>
+  <text x="640" y="345" font-family="Arial, sans-serif" font-size="10" fill="white">Port 9000 (Test)</text>
+  
+  <!-- Private Subnet 1 -->
+  <rect x="160" y="420" width="400" height="320" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="180" y="445" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Private Subnet 1 (10.0.3.0/24)</text>
+  
+  <!-- Private Subnet 2 -->
+  <rect x="640" y="420" width="400" height="320" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="660" y="445" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Private Subnet 2 (10.0.4.0/24)</text>
+  
+  <!-- ECS Cluster Label -->
+  <text x="360" y="470" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-decoration="underline">ECS Fargate Cluster</text>
+  
+  <!-- Blue Target Group -->
+  <rect x="190" y="480" width="110" height="35" rx="4" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2" filter="url(#shadow)"/>
+  <text x="245" y="502" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">Blue Target Group</text>
+  
+  <!-- Green Target Group -->
+  <rect x="910" y="480" width="110" height="35" rx="4" fill="#16a34a" stroke="#15803d" stroke-width="2" stroke-dasharray="5,5" filter="url(#shadow)"/>
+  <text x="965" y="502" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">Green Target Group</text>
+  
+  <!-- Active ECS Task (Blue) -->
+  <rect x="200" y="530" width="140" height="100" rx="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2" filter="url(#shadow)"/>
+  <text x="270" y="555" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">ECS Fargate Task</text>
+  <text x="270" y="570" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Java Full-Stack App</text>
+  <text x="270" y="585" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Container Port: 8080</text>
+  <text x="270" y="600" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">CPU: 256, Memory: 512</text>
+  <text x="270" y="615" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">RUNNING (Blue)</text>
+  
+  <!-- Standby ECS Task (Green - during deployment) -->
+  <rect x="880" y="530" width="140" height="100" rx="6" fill="#16a34a" stroke="#15803d" stroke-width="2" stroke-dasharray="5,5" filter="url(#shadow)" opacity="0.7"/>
+  <text x="950" y="555" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">ECS Fargate Task</text>
+  <text x="950" y="570" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">New Version</text>
+  <text x="950" y="585" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Container Port: 8080</text>
+  <text x="950" y="600" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">STANDBY (Green)</text>
+  <text x="950" y="615" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">Blue-Green Deploy</text>
+  
+  <!-- Auto Scaling Potential Tasks -->
+  <rect x="400" y="530" width="120" height="80" rx="4" fill="#64748b" stroke="#475569" stroke-width="2" stroke-dasharray="8,8" opacity="0.5"/>
+  <text x="460" y="560" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">Auto Scale</text>
+  <text x="460" y="575" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Task 2-4</text>
+  <text x="460" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(CPU > 70%)</text>
+  
+  <!-- Security Groups -->
+  <rect x="180" y="650" width="160" height="70" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="200" y="670" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#374151">ECS Security Group</text>
+  <text x="200" y="685" font-family="Arial, sans-serif" font-size="9" fill="#374151">Inbound: 8080 from ALB SG</text>
+  <text x="200" y="698" font-family="Arial, sans-serif" font-size="9" fill="#374151">Outbound: All traffic</text>
+  <text x="200" y="711" font-family="Arial, sans-serif" font-size="9" fill="#374151">For ECR, CloudWatch</text>
+  
+  <rect x="860" y="650" width="160" height="70" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="880" y="670" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#374151">ALB Security Group</text>
+  <text x="880" y="685" font-family="Arial, sans-serif" font-size="9" fill="#374151">Inbound: 80, 9000 from 0.0.0.0/0</text>
+  <text x="880" y="698" font-family="Arial, sans-serif" font-size="9" fill="#374151">Outbound: 8080 to ECS SG</text>
+  
+  <!-- CloudWatch Logs -->
+  <rect x="400" y="650" width="280" height="40" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+  <text x="540" y="675" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">CloudWatch Logs: /ecs/java-full-stack</text>
+  
+  <!-- S3 Artifact Bucket -->
+  <rect x="400" y="700" width="280" height="30" rx="4" fill="#16a34a" stroke="#15803d" stroke-width="2"/>
+  <text x="540" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">S3 Artifacts Bucket (CodePipeline)</text>
+  
+  <!-- CI/CD Pipeline Section -->
+  <rect x="1180" y="130" width="200" height="650" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="3"/>
+  <text x="1200" y="160" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#92400e">CI/CD Pipeline</text>
+  
+  <!-- GitHub -->
+  <rect x="1200" y="180" width="160" height="45" rx="5" fill="#24292e" stroke="#1a1e22" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1280" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">GitHub Repository</text>
+  <text x="1280" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#d1d5db">Java App + Dockerfile</text>
+  
+  <!-- GitHub Actions -->
+  <rect x="1200" y="240" width="160" height="35" rx="4" fill="#2088ff" stroke="#0969da" stroke-width="2"/>
+  <text x="1280" y="262" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">GitHub Actions (OIDC)</text>
+  
+  <!-- ECR -->
+  <rect x="1200" y="290" width="160" height="45" rx="5" fill="#ff9900" stroke="#e6870d" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1280" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Amazon ECR</text>
+  <text x="1280" y="328" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">java-full-stack:latest</text>
+  
+  <!-- EventBridge -->
+  <rect x="1200" y="350" width="160" height="35" rx="4" fill="#ef4444" stroke="#dc2626" stroke-width="2"/>
+  <text x="1280" y="372" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">EventBridge Rule</text>
+  
+  <!-- CodePipeline -->
+  <rect x="1200" y="400" width="160" height="45" rx="5" fill="#9d4edd" stroke="#8f3bb8" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1280" y="425" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">CodePipeline</text>
+  <text x="1280" y="438" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">Source→Build→Deploy</text>
+  
+  <!-- CodeBuild -->
+  <rect x="1200" y="460" width="160" height="35" rx="4" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+  <text x="1280" y="482" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">CodeBuild</text>
+  
+  <!-- CodeDeploy -->
+  <rect x="1200" y="510" width="160" height="45" rx="5" fill="#0ea5e9" stroke="#0284c7" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1280" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">CodeDeploy</text>
+  <text x="1280" y="548" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">Blue-Green ECS</text>
+  
+  <!-- Monitoring -->
+  <rect x="1200" y="570" width="160" height="45" rx="5" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>
+  <text x="1280" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Auto Scaling</text>
+  <text x="1280" y="608" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">CPU Target: 70%</text>
+  
+  <!-- Application Content -->
+  <rect x="1200" y="630" width="160" height="60" rx="5" fill="#10b981" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1280" y="650" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">Application Output</text>
+  <text x="1280" y="665" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Name: IBRAHIM</text>
+  <text x="1280" y="678" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Lab: ECS CICD!</text>
+  
+  <!-- Traffic Flow Arrows -->
+  <!-- Internet to IGW -->
+  <path d="M 610 140 L 610 180" stroke="#374151" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- IGW to ALB -->
+  <path d="M 610 230 L 560 330" stroke="#374151" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- ALB to Blue Target Group -->
+  <path d="M 450 380 Q 350 430 300 480" stroke="#3b82f6" stroke-width="3" fill="none" marker-end="url(#blueArrow)"/>
+  
+  <!-- ALB to Green Target Group (Test Traffic) -->
+  <path d="M 650 380 Q 800 430 950 480" stroke="#16a34a" stroke-width="3" stroke-dasharray="8,4" fill="none" marker-end="url(#greenArrow)"/>
+  
+  <!-- Target Groups to ECS Tasks -->
+  <path d="M 270 515 L 270 530" stroke="#3b82f6" stroke-width="2" fill="none" marker-end="url(#blueArrow)"/>
+  <path d="M 950 515 L 950 530" stroke="#16a34a" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#greenArrow)"/>
+  
+  <!-- NAT Gateway connections -->
+  <path d="M 245 360 Q 400 280 520 210" stroke="#fbbf24" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 725 360 Q 650 280 700 210" stroke="#fbbf24" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- ECS Tasks to CloudWatch -->
+  <path d="M 270 630 Q 400 640 540 650" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 950 630 Q 750 640 540 650" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- CI/CD Flow Arrows -->
+  <path d="M 1280 225 L 1280 240" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 1280 275 L 1280 290" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 1280 335 L 1280 350" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 1280 385 L 1280 400" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 1280 445 L 1280 460" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 1280 495 L 1280 510" stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- CodeDeploy to ECS -->
+  <path d="M 1200 535 Q 700 535 340 530" stroke="#9d4edd" stroke-width="3" stroke-dasharray="10,5" fill="none" marker-end="url(#purpleArrow)"/>
+  
+  <!-- Legend -->
+  <rect x="60" y="840" width="500" height="50" rx="4" fill="white" stroke="#d1d5db" stroke-width="1" filter="url(#shadow)"/>
+  <text x="80" y="858" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#374151">Traffic Flow Legend:</text>
+  <line x1="80" y1="870" x2="100" y2="870" stroke="#3b82f6" stroke-width="3"/>
+  <text x="105" y="875" font-family="Arial, sans-serif" font-size="10" fill="#374151">Production (Blue)</text>
+  <line x1="180" y1="870" x2="200" y2="870" stroke="#16a34a" stroke-width="3" stroke-dasharray="8,4"/>
+  <text x="205" y="875" font-family="Arial, sans-serif" font-size="10" fill="#374151">Test (Green)</text>
+  <line x1="270" y1="870" x2="290" y2="870" stroke="#9d4edd" stroke-width="3" stroke-dasharray="10,5"/>
+  <text x="295" y="875" font-family="Arial, sans-serif" font-size="10" fill="#374151">CI/CD Deploy</text>
+  <line x1="370" y1="870" x2="390" y2="870" stroke="#fbbf24" stroke-width="2"/>
+  <text x="395" y="875" font-family="Arial, sans-serif" font-size="10" fill="#374151">NAT Gateway</text>
+  <line x1="470" y1="870" x2="490" y2="870" stroke="#f59e0b" stroke-width="2"/>
+  <text x="495" y="875" font-family="Arial, sans-serif" font-size="10" fill="#374151">Logging</text>
+  
+  <!-- Key Features Box -->
+  <rect x="580" y="840" width="300" height="50" rx="4" fill="#f0f9ff" stroke="#0369a1" stroke-width="1" filter="url(#shadow)"/>
+  <text x="600" y="858" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#0369a1">High Availability Features:</text>
+  <text x="600" y="873" font-family="Arial, sans-serif" font-size="10" fill="#0369a1">• Multi-AZ (2 AZs) • Auto Scaling (1-4 tasks) • Blue-Green Deployment</text>
+  
+  <!-- Security & Compliance -->
+  <rect x="900" y="840" width="280" height="50" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1" filter="url(#shadow)"/>
+  <text x="920" y="858" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Security & Best Practices:</text>
+  <text x="920" y="873" font-family="Arial, sans-serif" font-size="10" fill="#dc2626">• Private subnets • OIDC Auth • Security Groups • CloudFormation</text>
+  
+  <!-- Blue-Green Deployment Flow Indicator -->
+  <rect x="350" y="430" width="420" height="25" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="1"/>
+  <text x="560" y="447" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#0284c7">Blue-Green Deployment: Traffic Routes Blue→Green on Success</text>
+</svg>
