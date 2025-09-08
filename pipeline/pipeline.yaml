@@ -29,7 +29,7 @@ Resources:
             Value: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn'
           - Name: TASK_ROLE_ARN
             Value: !ImportValue 'java-full-stack-ECSTaskRoleArn'
-      Source:
+          Source:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
@@ -38,21 +38,71 @@ Resources:
               commands:
                 - echo Logging in to Amazon ECR...
                 - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
-                - echo Getting latest image URI...
-                - IMAGE_URI=$ECR_REPOSITORY_URI:latest
-                - echo "Image URI will be:" $IMAGE_URI
+                - echo Setting up variables...
+                - TASK_DEF_ARN="arn:aws:ecs:$AWS_DEFAULT_REGION:$(aws sts get-caller-identity --query Account --output text):task-definition/java-full-stack-Task"
+                - echo "Task Definition ARN will be:" $TASK_DEF_ARN
             build:
               commands:
                 - echo Build started on `date`
-                - echo Creating appspec.yml...
-                - printf 'version: 0.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: <TASK_DEFINITION>\n        LoadBalancerInfo:\n          ContainerName: "java-full-stack-Container"\n          ContainerPort: 8080\n' > appspec.yml
+                - echo Creating appspec.yml with proper task definition reference...
+                - |
+                  cat > appspec.yml << EOF
+                  version: 0.0
+                  Resources:
+                    - TargetService:
+                        Type: AWS::ECS::Service
+                        Properties:
+                          TaskDefinition: $TASK_DEF_ARN
+                          LoadBalancerInfo:
+                            ContainerName: "java-full-stack-Container"
+                            ContainerPort: 8080
+                  EOF
                 - echo Creating taskdef.json...
-                - printf '{\n  "family": "java-full-stack-Task",\n  "networkMode": "awsvpc",\n  "requiresCompatibilities": ["FARGATE"],\n  "cpu": "256",\n  "memory": "512",\n  "executionRoleArn": "%s",\n  "taskRoleArn": "%s",\n  "containerDefinitions": [\n    {\n      "name": "java-full-stack-Container",\n      "image": "<IMAGE1_NAME>",\n      "essential": true,\n      "portMappings": [\n        {\n          "containerPort": 8080,\n          "protocol": "tcp"\n        }\n      ],\n      "logConfiguration": {\n        "logDriver": "awslogs",\n        "options": {\n          "awslogs-group": "/ecs/java-full-stack",\n          "awslogs-region": "%s",\n          "awslogs-stream-prefix": "ecs"\n        }\n      }\n    }\n  ]\n}\n' "$TASK_EXECUTION_ROLE_ARN" "$TASK_ROLE_ARN" "$AWS_DEFAULT_REGION" > taskdef.json
-                - echo "Validating generated files..."
+                - |
+                  cat > taskdef.json << EOF
+                  {
+                    "family": "java-full-stack-Task",
+                    "networkMode": "awsvpc",
+                    "requiresCompatibilities": ["FARGATE"],
+                    "cpu": "256",
+                    "memory": "512",
+                    "executionRoleArn": "$TASK_EXECUTION_ROLE_ARN",
+                    "taskRoleArn": "$TASK_ROLE_ARN",
+                    "containerDefinitions": [
+                      {
+                        "name": "java-full-stack-Container",
+                        "image": "<IMAGE1_NAME>",
+                        "essential": true,
+                        "portMappings": [
+                          {
+                            "containerPort": 8080,
+                            "protocol": "tcp"
+                          }
+                        ],
+                        "logConfiguration": {
+                          "logDriver": "awslogs",
+                          "options": {
+                            "awslogs-group": "/ecs/java-full-stack",
+                            "awslogs-region": "$AWS_DEFAULT_REGION",
+                            "awslogs-stream-prefix": "ecs"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                  EOF
+                - echo "=== GENERATED FILES DEBUG ==="
                 - echo "AppSpec content:"
                 - cat appspec.yml
+                - echo "=== END APPSPEC ==="
                 - echo "TaskDef content:"
                 - cat taskdef.json
+                - echo "=== END TASKDEF ==="
+                - echo "Validating JSON format..."
+                - python -m json.tool taskdef.json > /dev/null && echo "taskdef.json is valid JSON" || echo "taskdef.json is INVALID JSON"
+            post_build:
+              commands:
+                - echo Build completed on `date`
           artifacts:
             files:
               - appspec.yml
