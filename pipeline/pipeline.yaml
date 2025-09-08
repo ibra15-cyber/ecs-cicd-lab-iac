@@ -29,7 +29,6 @@ Resources:
             Value: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn'
           - Name: TASK_ROLE_ARN
             Value: !ImportValue 'java-full-stack-ECSTaskRoleArn'
-      # Fixed BuildSpec in your CodeBuild project (in pipeline.yaml)
       Source:
         Type: CODEPIPELINE
         BuildSpec: |
@@ -39,15 +38,14 @@ Resources:
               commands:
                 - echo Logging in to Amazon ECR...
                 - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
-                - echo Getting latest image URI...
-                - IMAGE_URI=$ECR_REPOSITORY_URI:latest
-                - echo "Image URI will be: $IMAGE_URI"
+                - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+                - IMAGE_URI=$ECR_REPOSITORY_URI:$IMAGE_TAG
             build:
               commands:
                 - echo Build started on `date`
                 - echo Creating appspec.yml...
                 - |
-                  cat > appspec.yml << 'EOF'
+                  cat > appspec.yml << EOF
                   version: 0.0
                   Resources:
                     - TargetService:
@@ -92,15 +90,18 @@ Resources:
                     ]
                   }
                   EOF
-                - echo "Validating generated files..."
-                - echo "AppSpec content:"
-                - cat appspec.yml
-                - echo "TaskDef content:"
-                - cat taskdef.json
+                - echo Creating imageDetail.json for ECR source...
+                - |
+                  cat > imageDetail.json << EOF
+                  {
+                    "ImageURI": "$IMAGE_URI"
+                  }
+                  EOF
           artifacts:
             files:
               - appspec.yml
               - taskdef.json
+              - imageDetail.json
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
