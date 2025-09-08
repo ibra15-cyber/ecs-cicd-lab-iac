@@ -428,7 +428,7 @@ Resources:
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub ${AppName}-TG
+      Name: !Sub ${AppName}-Blue-TG 
       Port: 80
       Protocol: HTTP
       TargetType: ip
