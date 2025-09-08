@@ -128,7 +128,7 @@ Resources:
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - TargetGroups:
-              - Name: !ImportValue 'java-full-stack-ALBTargetGroupName'
+              - Name: !ImportValue 'java-full-stack-ALBTargetGroupName' #blue
               - Name: !GetAtt GreenTargetGroup.TargetGroupName
             ProdTrafficRoute:
               ListenerArns: 
@@ -166,7 +166,7 @@ Outputs:
   # REPLACE this output in service.yaml
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
-    Value: !Ref GreenTargetGroup  # Get the actual NAME property
+    Value: !GetAtt  GreenTargetGroup.TargetGroupName  # Get the actual NAME property
     Export:
       Name: !Sub ${AppName}-GreenTargetGroupName
 
