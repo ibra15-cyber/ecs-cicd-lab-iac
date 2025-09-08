@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CodePipeline for ECS Blue-Green Deployment'
+Description: 'CodePipeline for ECS Blue-Green Deployment with CodeBuild'
 
 Parameters:
   AppName:
@@ -10,6 +10,125 @@ Parameters:
     Default: "default"
 
 Resources:
+  # CodeBuild Project to create deployment artifacts
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AppName}-DeploymentArtifacts
+      ServiceRole: !Ref CodeBuildServiceRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        EnvironmentVariables:
+          - Name: ECR_REPOSITORY_URI
+            Value: !ImportValue 'java-full-stack-ECRRepositoryURI'
+          - Name: TASK_EXECUTION_ROLE_ARN
+            Value: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn'
+          - Name: TASK_ROLE_ARN
+            Value: !ImportValue 'java-full-stack-ECSTaskRoleArn'
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - echo Logging in to Amazon ECR...
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
+                - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+                - IMAGE_URI=$ECR_REPOSITORY_URI:$IMAGE_TAG
+            build:
+              commands:
+                - echo Build started on `date`
+                - echo Creating appspec.yml...
+                - |
+                  cat > appspec.yml << EOF
+                  version: 0.0
+                  Resources:
+                    - TargetService:
+                        Type: AWS::ECS::Service
+                        Properties:
+                          TaskDefinition: <TASK_DEFINITION>
+                          LoadBalancerInfo:
+                            ContainerName: "java-full-stack-Container"
+                            ContainerPort: 8080
+                  EOF
+                - echo Creating taskdef.json...
+                - |
+                  cat > taskdef.json << EOF
+                  {
+                    "family": "java-full-stack-Task",
+                    "networkMode": "awsvpc",
+                    "requiresCompatibilities": ["FARGATE"],
+                    "cpu": "256",
+                    "memory": "512",
+                    "executionRoleArn": "$TASK_EXECUTION_ROLE_ARN",
+                    "taskRoleArn": "$TASK_ROLE_ARN",
+                    "containerDefinitions": [
+                      {
+                        "name": "java-full-stack-Container",
+                        "image": "<IMAGE1_NAME>",
+                        "essential": true,
+                        "portMappings": [
+                          {
+                            "containerPort": 8080,
+                            "protocol": "tcp"
+                          }
+                        ],
+                        "logConfiguration": {
+                          "logDriver": "awslogs",
+                          "options": {
+                            "awslogs-group": "/ecs/java-full-stack",
+                            "awslogs-region": "$AWS_DEFAULT_REGION",
+                            "awslogs-stream-prefix": "ecs"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                  EOF
+                - echo Creating imageDetail.json for ECR source...
+                - |
+                  cat > imageDetail.json << EOF
+                  {
+                    "ImageURI": "$IMAGE_URI"
+                  }
+                  EOF
+          artifacts:
+            files:
+              - appspec.yml
+              - taskdef.json
+              - imageDetail.json
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -33,6 +152,21 @@ Resources:
               OutputArtifacts:
                 - Name: ECRImage
               RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: CreateDeploymentArtifacts
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: ECRImage
+              OutputArtifacts:
+                - Name: DeploymentArtifacts
+              RunOrder: 1
         - Name: Deploy
           Actions:
             - Name: CodeDeploy
@@ -45,7 +179,7 @@ Resources:
                 ApplicationName: !ImportValue 'java-full-stack-CodeDeployAppName'
                 DeploymentGroupName: !ImportValue 'java-full-stack-CodeDeployDeploymentGroupName'
               InputArtifacts:
-                - Name: ECRImage
+                - Name: DeploymentArtifacts
               RunOrder: 1
 
 Outputs:
