@@ -17,7 +17,7 @@ Resources:
       RoleArn: !ImportValue 'java-full-stack-CodePipelineServiceRoleArn'
       ArtifactStore:
         Type: S3
-        Location: !ImportValue 'java-full-stack-ArtifactBucketName' # FIXED IMPORT
+        Location: !ImportValue 'java-full-stack-ArtifactBucketName'
       Stages:
         - Name: Source
           Actions:
@@ -42,8 +42,8 @@ Resources:
                 Version: '1'
                 Provider: CodeDeploy
               Configuration:
-                ApplicationName: !ImportValue 'java-full-stack-CodeDeployAppName' # Now this will work
-                DeploymentGroupName: !ImportValue 'java-full-stack-CodeDeployDeploymentGroupName' # Now this will work
+                ApplicationName: !ImportValue 'java-full-stack-CodeDeployAppName'
+                DeploymentGroupName: !ImportValue 'java-full-stack-CodeDeployDeploymentGroupName'
               InputArtifacts:
                 - Name: ECRImage
               RunOrder: 1
