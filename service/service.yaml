@@ -166,7 +166,7 @@ Outputs:
   # REPLACE this output in service.yaml
   GreenTargetGroupName:
     Description: 'Green Target Group Name'
-    Value: !GetAtt GreenTargetGroup.TargetGroupName  # Get the actual NAME property
+    Value: !Ref GreenTargetGroup  # Get the actual NAME property
     Export:
       Name: !Sub ${AppName}-GreenTargetGroupName
 

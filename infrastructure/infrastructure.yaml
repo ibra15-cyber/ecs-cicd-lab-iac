@@ -579,7 +579,7 @@ Outputs:
   # In your infrastructure.yaml outputs section
   ALBTargetGroupName:
     Description: ALB Target Group Name
-    Value: !GetAtt ALBTargetGroup.TargetGroupName
+    Value: !Ref ALBTargetGroup
     Export:
       Name: !Sub ${AppName}-ALBTargetGroupName
 
