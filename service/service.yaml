@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - triggered'
+Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - TRIGGERED'
 
 Parameters:
   AppName:
