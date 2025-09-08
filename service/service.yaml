@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - TRIGGERED'
+Description: 'ECS Fargate Service Stack with CodeDeploy Blue-Green Deployment - triggered'
 
 Parameters:
   AppName:
@@ -72,7 +72,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       ServiceName: !Sub ${AppName}-Service
-      Cluster: !ImportValue 'java-full-stack-ECSClusterName'  # FIXED: Use ImportValue instead of Ref
+      Cluster: !ImportValue 'java-full-stack-ECSClusterName'
       TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: 1
       LaunchType: FARGATE
@@ -91,30 +91,17 @@ Resources:
           SecurityGroups:
             - !ImportValue 'java-full-stack-ECSSecurityGroupId'
 
-  # --- APPLICATION AUTO SCALING (Added to meet requirements) ---
-  ApplicationAutoScalingRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: application-autoscaling.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSServiceRolePolicy
-
+  # --- APPLICATION AUTO SCALING ---
   ScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: ECSService
     Properties:
       MaxCapacity: 4
       MinCapacity: 1
       ResourceId: !Sub 
         - service/${ClusterName}/${ServiceName}
         - ClusterName: !ImportValue 'java-full-stack-ECSClusterName'
-          ServiceName: !Sub ${AppName}-Service
-      RoleARN: !GetAtt ApplicationAutoScalingRole.Arn
+          ServiceName: !GetAtt ECSService.Name
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
