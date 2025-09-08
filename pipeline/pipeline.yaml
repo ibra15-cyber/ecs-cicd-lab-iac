@@ -29,7 +29,7 @@ Resources:
             Value: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn'
           - Name: TASK_ROLE_ARN
             Value: !ImportValue 'java-full-stack-ECSTaskRoleArn'
-          Source:
+      Source:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
