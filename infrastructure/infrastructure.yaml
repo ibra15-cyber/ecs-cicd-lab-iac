@@ -435,6 +435,10 @@ Resources:
       VpcId: !Ref VPC
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
       Matcher:
         HttpCode: '200'
 
