@@ -155,7 +155,7 @@ Resources:
                 RepositoryName: !Ref AppName
                 ImageTag: latest
               OutputArtifacts:
-                - Name: ECRImage
+                - Name: ECRImage # This artifact contains the image metadata
               RunOrder: 1
         - Name: Build
           Actions:
@@ -168,9 +168,9 @@ Resources:
               Configuration:
                 ProjectName: !Ref CodeBuildProject
               InputArtifacts:
-                - Name: ECRImage
+                - Name: ECRImage # Takes the ECRImage artifact from the Source stage as input.
               OutputArtifacts:
-                - Name: DeploymentArtifacts
+                - Name: DeploymentArtifacts  # Outputs the appspec.yml and taskdef.json
               RunOrder: 1
         - Name: Deploy
           Actions:

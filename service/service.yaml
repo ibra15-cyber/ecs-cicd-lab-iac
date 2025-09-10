@@ -11,34 +11,34 @@ Parameters:
     Description: 'Timestamp to force changeset creation'
 
 Resources:
-  # ECS TASK DEFINITION
+  # ECS TASK DEFINITION - blublueprint for how to run your applicatione 
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Sub ${AppName}-Task
-      NetworkMode: awsvpc
+      NetworkMode: awsvpc  #AWS VPC networking mode, which gives each task its own IP address
       RequiresCompatibilities: [FARGATE]
       Cpu: 256
       Memory: 512
-      ExecutionRoleArn: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn'
-      TaskRoleArn: !ImportValue 'java-full-stack-ECSTaskRoleArn'
-      ContainerDefinitions:
+      ExecutionRoleArn: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn' #allows ECS to pull the image and write logs
+      TaskRoleArn: !ImportValue 'java-full-stack-ECSTaskRoleArn' #the task role is for the application itself.
+      ContainerDefinitions: #Defines the actual container to run.
         - Name: !Sub ${AppName}-Container
           Image: !Sub 
             - "${ECRRepoURI}:latest"
-            - ECRRepoURI: !ImportValue 'java-full-stack-ECRRepositoryURI'
+            - ECRRepoURI: !ImportValue 'java-full-stack-ECRRepositoryURI' #import the uri of the ecr repo and tag it with latest
           Essential: true
           PortMappings:
-            - ContainerPort: 8080
+            - ContainerPort: 8080 #Tells ECS that the container is listening on port 8080.
               Protocol: tcp
-          LogConfiguration:
+          LogConfiguration: #Configures the container to send its log output to the specific CloudWatch Logs group created in the infrastructure stack.
             LogDriver: awslogs
             Options:
               awslogs-group: !ImportValue 'java-full-stack-CloudWatchLogGroupName'
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: ecs
 
-  # --- GREEN TARGET GROUP FOR BLUE-GREEN DEPLOYMENT ---
+  # --- GREEN TARGET GROUP FOR BLUE-GREEN DEPLOYMENT/ stagging  ---
   GreenTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -61,23 +61,23 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !ImportValue 'java-full-stack-ALBArn'
-      Port: 9000
+      Port: 9000 #provides a way to send traffic directly to the new version (e.g., for integration tests) without affecting the live production traffic on port 80.
       Protocol: HTTP
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref GreenTargetGroup
 
   # --- ECS SERVICE (with Load Balancer configuration) ---
-  ECSService:
+  ECSService: # This is the resource that actually runs and maintains the application application.
     Type: AWS::ECS::Service
     Properties:
       ServiceName: !Sub ${AppName}-Service
       Cluster: !ImportValue 'java-full-stack-ECSClusterName'
       TaskDefinition: !Ref ECSTaskDefinition
-      DesiredCount: 1
+      DesiredCount: 0
       LaunchType: FARGATE
       DeploymentController:
-        Type: CODE_DEPLOY
+        Type: CODE_DEPLOY #tells ECS to hand over control of deployments to AWS CodeDeploy
       LoadBalancers:
         - TargetGroupArn: !ImportValue 'java-full-stack-ALBTargetGroupArn'
           ContainerName: !Sub ${AppName}-Container
@@ -92,6 +92,7 @@ Resources:
             - !ImportValue 'java-full-stack-ECSSecurityGroupId'
 
   # --- APPLICATION AUTO SCALING ---
+  # This resource defines what ECS Service to scale and the bounds within which it can scale.
   ScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     DependsOn: ECSService
@@ -99,24 +100,24 @@ Resources:
       MaxCapacity: 4
       MinCapacity: 1
       ResourceId: !Sub 
-        - service/${ClusterName}/${ServiceName}
+        - service/${ClusterName}/${ServiceName} # get the cluster and service name to make intrinsic functions to construct the unique identifier for your ECS service
         - ClusterName: !ImportValue 'java-full-stack-ECSClusterName'
           ServiceName: !GetAtt ECSService.Name
-      ScalableDimension: ecs:service:DesiredCount
-      ServiceNamespace: ecs
+      ScalableDimension: ecs:service:DesiredCount #scale the number of tasks that the ECS service maintains
+      ServiceNamespace: ecs #the resource to scale is an ECS service.
 
   ScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
       PolicyName: !Sub ${AppName}-cpu-scaling-policy
-      PolicyType: TargetTrackingScaling
+      PolicyType: TargetTrackingScaling #keeps a specific CloudWatch metric close to your target value.
       ScalingTargetId: !Ref ScalableTarget
       TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 70.0
-        ScaleInCooldown: 300
+        TargetValue: 70.0 #consistent cpu usage above 70% scale out and vice versa
+        ScaleInCooldown: 300 # safety mechanisms to prevent rapid, flapping scaling actions. wait 5 minutes before considering scaling out again
         ScaleOutCooldown: 300
         PredefinedMetricSpecification:
-          PredefinedMetricType: ECSServiceAverageCPUUtilization
+          PredefinedMetricType: ECSServiceAverageCPUUtilization #the metric that the policy tracks.
 
   # --- CODE DEPLOY APPLICATION ---
   CodeDeployApp:
@@ -133,21 +134,21 @@ Resources:
       ApplicationName: !Ref CodeDeployApp
       DeploymentGroupName: !Sub ${AppName}-CodeDeploy-DG
       ServiceRoleArn: !ImportValue 'java-full-stack-CodeDeployServiceRoleArn'
-      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce #switch all traffic from blue to green at once
       DeploymentStyle:
-        DeploymentType: BLUE_GREEN
-        DeploymentOption: WITH_TRAFFIC_CONTROL
+        DeploymentType: BLUE_GREEN # Specifies that this is a blue-green deployment
+        DeploymentOption: WITH_TRAFFIC_CONTROL # CodeDeploy should manage the traffic routing
       BlueGreenDeploymentConfiguration:
         TerminateBlueInstancesOnDeploymentSuccess:
           Action: TERMINATE
-          TerminationWaitTimeInMinutes: 5
+          TerminationWaitTimeInMinutes: 5 # Tells CodeDeploy to terminate the old ("blue") tasks 5 minutes after the deployment succeeds.
         DeploymentReadyOption:
-          ActionOnTimeout: CONTINUE_DEPLOYMENT
-      AutoRollbackConfiguration:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT #Tells CodeDeploy to proceed with the traffic shift automatically after a health check.
+      AutoRollbackConfiguration: # Automatically rolls back to the blue version if the deployment fails or an alarm triggers.
         Enabled: true
         Events:
           - DEPLOYMENT_FAILURE
-          - DEPLOYMENT_STOP_ON_ALARM
+          - DEPLOYMENT_STOP_ON_ALARM 
       ECSServices:
         - ServiceName: !GetAtt ECSService.Name
           ClusterName: !ImportValue 'java-full-stack-ECSClusterName'
