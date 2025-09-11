@@ -1,4 +1,5 @@
 template-file-path: service/service.yaml
 parameters:
+  DeploymentTimestamp: default
   AppName: java-full-stack
 tags: {}
