@@ -49,7 +49,7 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       Path: /
 
-  # roles assumed by the ecs-tasks (actual running container) 
+  # roles assumed by the ecs-tasks (actual running container) towards other services in the future
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -375,7 +375,7 @@ Resources:
       SubnetId: !Ref PrivateSubnet2
       RouteTableId: !Ref PrivateRouteTable2
 
-  # --- SECURITY GROUPS --- FILEWALL RULES -----
+  # --- SECURITY GROUPS --- FIREWALL RULES -----
   #The security group for the Application Load Balancer (ALB).
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -396,7 +396,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080 
-          CidrIp: 0.0.0.0/0 #The ALB is only allowed to send traffic out to port 8080 (the port your application container is listening on)
+          CidrIp: 0.0.0.0/0 #The ALB is only allowed to send traffic out to port 8080 (the port the application container is listening on)
 
 # 
   ECSSecurityGroup:
@@ -491,7 +491,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Description: !Sub Rule to trigger pipeline when a new image is pushed to ${AppName} ECR repo
-      EventPattern: #  Watches for a specific CloudWatch event: a successful PUSH to your specific ECR repository.
+      EventPattern: #  Watches for a specific CloudWatch event: a successful PUSH to the ECR repository.
         source:
           - aws.ecr
         detail-type:

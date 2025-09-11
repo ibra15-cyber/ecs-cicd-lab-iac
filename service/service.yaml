@@ -74,7 +74,7 @@ Resources:
       ServiceName: !Sub ${AppName}-Service
       Cluster: !ImportValue 'java-full-stack-ECSClusterName'
       TaskDefinition: !Ref ECSTaskDefinition
-      DesiredCount: 0
+      DesiredCount: 1
       LaunchType: FARGATE
       DeploymentController:
         Type: CODE_DEPLOY #tells ECS to hand over control of deployments to AWS CodeDeploy
