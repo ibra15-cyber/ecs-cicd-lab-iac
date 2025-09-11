@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CodePipeline for ECS Blue-Green Deployment with CodeBuild'
+Description: 'CodePipeline for ECS Blue-Green Deployment'
 
 Parameters:
   AppName:
@@ -21,33 +21,37 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: ECR-Source
+            - Name: S3-Artifacts-Source
               ActionTypeId:
                 Category: Source
                 Owner: AWS
                 Version: '1'
-                Provider: ECR
+                Provider: S3
               Configuration:
-                RepositoryName: !Ref AppName
-                ImageTag: latest
+                S3Bucket: !ImportValue 'java-full-stack-ArtifactBucketName'
+                S3ObjectKey: deployment-artifacts/latest.zip
+                PollForSourceChanges: false
               OutputArtifacts:
-                - Name: ECRImage
+                - Name: SourceArtifact
               RunOrder: 1
         - Name: Deploy
           Actions:
-            - Name: CodeDeploy
+            - Name: ECS-Deploy
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
                 Version: '1'
-                Provider: CodeDeploy
+                Provider: CodeDeployToECS  # CHANGED FROM: CodeDeploy
               Configuration:
                 ApplicationName: !ImportValue 'java-full-stack-CodeDeployAppName'
                 DeploymentGroupName: !ImportValue 'java-full-stack-CodeDeployDeploymentGroupName'
+                TaskDefinitionTemplateArtifact: SourceArtifact  # NEW
+                TaskDefinitionTemplatePath: "taskdef.json"      # NEW
+                AppSpecTemplateArtifact: SourceArtifact         # NEW
+                AppSpecTemplatePath: "appspec.yml"              # NEW
               InputArtifacts:
-                - Name: DeploymentArtifacts
+                - Name: SourceArtifact
               RunOrder: 1
-
 Outputs:
   PipelineName:
     Description: 'CodePipeline Name'
