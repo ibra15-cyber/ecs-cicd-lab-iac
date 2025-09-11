@@ -503,6 +503,8 @@ Resources:
             - SUCCESS 
           repository-name:
             - !Ref AppName
+          image-tag:
+            - latest
       Targets:
         - Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${AppName}-Pipeline #When that event is detected, it tells EventBridge to start an execution of your CodePipeline.
           Id: CodePipelineTarget

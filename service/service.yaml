@@ -22,16 +22,22 @@ Resources:
       Memory: 512
       ExecutionRoleArn: !ImportValue 'java-full-stack-ECSTaskExecutionRoleArn' #allows ECS to pull the image and write logs
       TaskRoleArn: !ImportValue 'java-full-stack-ECSTaskRoleArn' #the task role is for the application itself.
-      ContainerDefinitions: #Defines the actual container to run.
+      ContainerDefinitions:
         - Name: !Sub ${AppName}-Container
-          Image: !Sub 
+          Image: !Sub
             - "${ECRRepoURI}:latest"
-            - ECRRepoURI: !ImportValue 'java-full-stack-ECRRepositoryURI' #import the uri of the ecr repo and tag it with latest
+            - ECRRepoURI: !ImportValue 'java-full-stack-ECRRepositoryURI'
           Essential: true
           PortMappings:
-            - ContainerPort: 8080 #Tells ECS that the container is listening on port 8080.
+            - ContainerPort: 8080
               Protocol: tcp
-          LogConfiguration: #Configures the container to send its log output to the specific CloudWatch Logs group created in the infrastructure stack.
+          HealthCheck:
+            Command: [ "CMD-SHELL", "curl -f http://localhost:8080/ || exit 1" ]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+          LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !ImportValue 'java-full-stack-CloudWatchLogGroupName'
