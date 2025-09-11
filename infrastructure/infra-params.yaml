@@ -1,5 +1,6 @@
 template-file-path: infrastructure/infrastructure.yaml
 parameters:
+  DeploymentTimestamp: default
   GitHubRepoName: ecs-cicd-lab-app
   AppName: java-full-stack
   GitHubRepoOwner: ibra15-cyber
